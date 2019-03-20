@@ -1,0 +1,60 @@
+- code: 400
+  msg: '请求格式错误'
+- code: 401
+  msg: '未授权'
+- code: 404
+  msg: '没找到资源'
+- code: 3001
+  msg: 'Username or password is invalid'
+- code: 3002
+  msg: 'Account is inactivated.'
+- code: 3003
+  msg: 'Email not Register'
+- code: 3004
+  msg: 'User name or mail already exists.'
+- code: 3005
+  msg: "User's session key not exists, need to login."
+- code: 3006
+  msg: "User's session value not exists, need to login"
+- code: 3007
+  msg: 'Other people login this account, session is invalid.'
+- code: 3008
+  msg: 'User Permission Deny.'
+- code: 3011
+  msg: 'Account is not exists, please sign up.'
+- code: 3012
+  msg: 'Address is not allowed.'
+- code: 3014
+  msg: 'Nick Name already set.'
+- code: 3015
+  msg: 'Either "nickname" or "password" should be in arguments.'
+- code: 3016
+  msg: 'Either "username" or "email" should be in arguments.'
+- code: 3031
+  msg: 'Not Regular Password'
+- code: 3032
+  msg: 'Not Regular Email'
+- code: 3033
+  msg: 'Not Regular Nickname'
+- code: 3100
+  msg: 'Permission Deny.'
+- code: 3104
+  msg: 'Chat Not Exists.'
+- code: 3105
+  msg: 'Can not enter this chat.'
+- code: 3106
+  msg: 'Chat owner missed.'
+- code: 3150
+  msg: 'Chat Member Exists.'
+- code: 3151
+  msg: 'Chat Member Not Exists.'
+- code: 3152
+  msg: 'No Message Found.'
+- code: 4003
+  msg: 'Permission Denied.'
+- code: 4004
+  msg: 'Not Found Error.'
+- code: 4005
+  msg: 'Permission Error.'
+- code: 5003
+  msg: 'Server Error.'

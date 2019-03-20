@@ -1,0 +1,67 @@
+# thor configuration
+
+application:
+  template_path: templates
+  static_path: assets
+  cookie_secret: QiNDQXm6peOfl1VOGhdLoZ0f3ZucyEg6psGNLu1tWZE=
+  debug: true
+  autoreload: false
+
+# ------ httpserver ------
+
+httpserver:
+  xheaders: true
+
+# ------   server   ------
+
+server:
+  domain: "my.domain.com"
+  port: 10086
+  expire_time: 3600
+  back_ip: "127.0.0.1"
+  pass_mixin: "xxxxxxxxxxxx"
+  token_secret: "xxxxxxxxxxxxxx"
+  token_header: "Bf-Token"
+  cookie_name:
+    user_id: u_u
+    parameters: o_o
+
+# ------ worker mode ------
+# use celery or call the method directly.
+
+worker:
+  mode: false
+
+# ------ celery options ------
+# backend: "redis://:<passwd>@<host>:<port>/<db_num>"
+# broker: "pyamqp://<user_name>:<passwd>@<host>:<port>/<virtual_host>"
+
+celery:
+  backend: "redis://"
+  broker: "amqp://"
+  sleep_time: 0.05
+
+cache:
+  redis:
+    host: "127.0.0.1"
+    port: 6379
+    passwd: "lzv9fn43kr45jklaelsf71jh45nflkzxlfopejkthjd764j5dkvowhebn45ghf7as6345"
+
+# ------ database options ------
+
+# mysql: "<dialect>+<driver>://<username>:<password>@<host>:<port>/<database>"
+# client: "mongodb://<username>:<password>@<host>:<port>/<auth_db_name>"
+# db: "<db_name>"
+
+database:
+  mysql: "mysql+pymysql://"
+  mongo:
+    client: "mongodb://"
+    db: ""
+
+# ------ debug ------
+# log all message if debug is true.
+
+debug: true
+
+# ------ mail ------

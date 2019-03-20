@@ -1,0 +1,2 @@
+recursive-include tarpit/templates *
+recursive-exclude tarpit/templates */__pycache__/*
