@@ -5,18 +5,18 @@ import os
 import json
 
 import yaml
-from tarpit.entity import Arguments
+from .utils import Arguments
 
 _ENV = os.getenv('TARPIT_ENV', 'mypc')
 
 
-class Config:
+class Configuration:
     """Config Module"""
     _instance = None
 
     def __new__(cls, **kwargs):
         if not cls._instance:
-            cls._instance = super(Config, cls).__new__(cls)
+            cls._instance = super(Configuration, cls).__new__(cls)
             cls._instance.__init__(**kwargs)
         return cls._instance
 
@@ -56,9 +56,6 @@ class Config:
         sys.stdout.flush()
 
 
-CONFIG = Config()
-
-
 class ErrorCode():
 
     _code = {}
@@ -82,6 +79,7 @@ class ErrorCode():
         return self._code.get(code, default)
 
 
+CONFIG = Configuration()
 STATUS = ErrorCode()
 
 

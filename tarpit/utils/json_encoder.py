@@ -4,7 +4,7 @@ import json
 from json import JSONEncoder
 
 
-def thor_default(o):
+def tarpit_default(o):
     try:
         return iter(o)
     except TypeError:
@@ -18,13 +18,13 @@ json._default_encoder = JSONEncoder(
     allow_nan=True,
     indent=None,
     separators=None,
-    default=thor_default,
+    default=tarpit_default,
 )
 
 
-def thor_dumps(obj):
-    return json.dumps(obj, default=thor_default)
+def tarpit_dumps(obj):
+    return json.dumps(obj, default=tarpit_default)
 
 
-def thor_loads(obj):
+def tarpit_loads(obj):
     return json.loads(obj)

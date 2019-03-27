@@ -2,17 +2,16 @@
 """Some Verify Function."""
 import re
 
-PATTERN = dict(
-    email=re.compile(r'^([\w\-.]+)@([\w-]+)(\.([\w-]+))+$'),
-    password=re.compile(
-        r'^[0-9A-Za-z`~!@#$%^&*()_+\-=\{\}\[\]:;"\'<>,.\\|?/]{6,24}$'))
 
+class Patterns():
 
-def check_mail(email):
-    """Check Email Pattern."""
-    return re.match(PATTERN['email'], email)
+    def __init__(self):
+        self.email = re.compile(r'^([\w\-.]+)@([\w-]+)(\.([\w-]+))+$')
+        self.password = re.compile(
+            r'^[0-9A-Za-z`~!@#$%^&*()_+\-=\{\}\[\]:;"\'<>,.\\|?/]{6,24}$')
 
-
-def check_password(password):
-    """Check Password Pattern."""
-    return re.match(PATTERN['password'], password)
+    def check(self, pattern_name, target):
+        if not hasattr(self, pattern_name):
+            return False
+        pattern = self.__getattribute__(pattern_name)
+        return re.match(pattern, target)

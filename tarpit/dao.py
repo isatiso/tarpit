@@ -2,14 +2,14 @@
 from functools import wraps
 import traceback
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Query, Session
 from motor import MotorGridFSBucket, motor_tornado as motor
 from pymongo import MongoClient
 
-from tarpit.utils.logger import dump_in, dump_out, dump_error
-from tarpit.config import CONFIG as O_O
+from .utils.logger import dump_in, dump_out, dump_error
+from .config import CONFIG as O_O
 
 
 class MongoBase():
@@ -88,31 +88,6 @@ class BaseMapper:
         self.session = session
 
 
-def dict_of(entity, *options, **alias):
-    if entity is None:
-        return dict()
-
-    res = dict()
-    for key in options:
-        alias[key] = None
-
-    for key in entity.__dict__:
-        if not alias or key in alias:
-            if not key.startswith('_'):
-                if isinstance(alias.get(key), str):
-                    real_key = alias[key]
-                else:
-                    real_key = key
-                if isinstance(entity.__dict__[key], enum.Enum):
-                    res[real_key] = entity.__dict__[key].name
-                elif isinstance(entity.__dict__[key], datetime):
-                    res[real_key] = int(entity.__dict__[key].timestamp())
-                else:
-                    res[real_key] = entity.__dict__[key]
-
-    return res
-
-
 class DaoContext:
 
     def __init__(self, session, mapper):
@@ -124,6 +99,32 @@ class DaoContext:
 
     def commit(self):
         self.session.commit()
+
+    def dict_of(self, entity, *options, **alias):
+        if entity is None:
+            return dict()
+
+        res = dict()
+        for key in options:
+            alias[key] = None
+
+        for key in entity.__dict__:
+            if not alias or key in alias:
+                if not key.startswith('_'):
+                    if isinstance(alias.get(key), str):
+                        real_key = alias[key]
+                    else:
+                        real_key = key
+                    if isinstance(entity.__dict__[key], enum.Enum):
+                        res[real_key] = entity.__dict__[key].name
+                    elif isinstance(entity.__dict__[key], datetime):
+                        t = entity.__dict__[key]
+                        t = t.replace(tzinfo=timezone.utc)
+                        res[real_key] = int(t.timestamp())
+                    else:
+                        res[real_key] = entity.__dict__[key]
+
+        return res
 
 
 def transaction(function, mappers, rollback=True):
