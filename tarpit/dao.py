@@ -18,14 +18,11 @@ class MongoBase():
     __collection_name__ = None
     __alias__ = None
 
-    def __init__(self):
-        T_T = O_O.database.mongo
-        self.client = motor.MotorClient(T_T.client).__getattr__(T_T.db)
-        self.sync_client = MongoClient(T_T.client).__getattr__(T_T.db)
-        self.__setattr__(self.__collection_name__,
-                         self.client.__getattr__(self.__collection_name__))
+    def __init__(self, client):
+        self.client = client
 
-    def __collection_init__(self):
+    @staticmethod
+    def __collection_init__(client):
         """Write some collection initial operation, like set some index."""
         pass
 
@@ -33,25 +30,30 @@ class MongoBase():
 class MongoFactory():
     """Mongo Client Set."""
 
-    _instance = None
+    _collection_dict = None
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(MongoFactory, cls).__new__(cls)
-            cls._instance.mongo_init()
-            print('mongo new')
+    def __init__(self, sync=False):
+        if self._collection_dict is None:
+            self._mongo_init()
+            print('collection_init')
+        if sync:
+            self._client = self._mongo_client
+        else:
+            self._client = self._motor_client
 
-        return cls._instance
+    def _mongo_init(self):
+        T_T = O_O.database.mongo
+        self._mongo_client = MongoClient(T_T.client).__getattr__(T_T.db)
+        self._motor_client = motor.MotorClient(T_T.client).__getattr__(T_T.db)
+        self._collection_dict = {(scls.__alias__ or scls.__collection_name__):
+                                 scls for scls in MongoBase.__subclasses__()}
 
-    @classmethod
-    def mongo_init(self):
-        self.collection_dict = {(scls.__alias__ or scls.__collection_name__):
-                                scls for scls in MongoBase.__subclasses__()}
-        for scls in MongoBase.__subclasses__():
-            scls().__collection_init__()
+        if T_T.run_init:
+            for scls in MongoBase.__subclasses__():
+                scls.__collection_init__(self._mongo_client)
 
     def __getattr__(self, name):
-        return self.collection_dict[name]()
+        return self.collection_dict[name](self._client)
 
 
 class SessionMaker:
@@ -93,6 +95,7 @@ class DaoContext:
     def __init__(self, session, mapper):
         self.session = session
         self.mapper = mapper
+        self.mongo = MongoFactory(sync=True)
 
     def get_mapper(self):
         return self.mapper(self.session)
