@@ -14,8 +14,8 @@ class MongoSession(MongoBase):
             'timestamp', expireAfterSeconds=86400)
         self.sync_client.storage.create_index('mail')
 
-    def insert_image(self):
-        self.client.image.update_one(
+    async def insert_image(self):
+        await self.client.image.update_one(
             {'session_id': 1}, {'$set': {
                 'user_id': 2,
                 'user_name': 'lkjklj'

@@ -15,54 +15,16 @@ import inspect
 
 import jwt
 from tornado import gen, httpclient
-from tornado.web import Finish, RequestHandler, HTTPError
+from tornado.web import Finish, RequestHandler
 from tornado.log import app_log, gen_log
 
-from tarpit.config import CONFIG as O_O, get_status_message
-from tarpit.entity import Arguments, ParseJSONError
-from tarpit.utils import dump_in, dump_out, dump_error, json_encoder
-from tarpit.task import TaskError, SERVICES
-from tarpit.dao import MongoFactory
+from .err import *
+from .config import CONFIG as O_O, get_status_message
+from .utils import Arguments, dump_in, dump_out, dump_error, json_encoder
+from .task import TaskError, SERVICES
+from .dao import MongoFactory
 
 ROUTES = []
-
-
-def check_params(func):
-    """Decorator to create a parameters checker."""
-    parameters = inspect.signature(func).parameters
-
-    for name, value in parameters.items():
-        if value.kind == value.VAR_KEYWORD:
-            continue
-        if value.kind == value.VAR_POSITIONAL:
-            continue
-
-        if value.annotation == value.empty:
-            raise ValueError(f'Annotation of key <"{name}"> is not exists.')
-
-    def inner(**kwargs):
-        for name, value in parameters.items():
-            if value.kind == value.VAR_KEYWORD:
-                continue
-            if value.kind == value.VAR_POSITIONAL:
-                continue
-
-            if kwargs.get(name) is None:
-                if value.default != value.empty:
-                    kwargs[name] = value.default
-                else:
-                    raise MissingArgumentError(name)
-
-            if kwargs[name] is not None and not isinstance(
-                    kwargs[name], value.annotation):
-                try:
-                    kwargs[name] = value.annotation(kwargs[name])
-                except:
-                    raise ArgumentTypeError(name, value.annotation)
-
-        return kwargs
-
-    return inner
 
 
 def route(*path_list: str):
@@ -88,25 +50,14 @@ def route(*path_list: str):
     return wrapper
 
 
-def recursive_import(submodule_location, submodule_name=''):
-    dirname = submodule_name and (submodule_name + '.')
-    module_dict = dict()
-    for m in pkgutil.iter_modules(submodule_location):
-        if m.ispkg:
-            location = f'{submodule_location[0]}/{m.name}'
-            recursive_import([location], submodule_name=f'{dirname}{m.name}')
-        else:
-            module_dict[m.name] = importlib.import_module(f'{dirname}{m.name}')
-
-
-class Auth:
+class auth:
 
     def __init__(self, optional=False, **options):
         self.options = options
         self.optional = optional
 
     def __new__(cls, func=None, **options):
-        instance = super(Auth, cls).__new__(cls)
+        instance = super(auth, cls).__new__(cls)
         instance.__init__(**options)
         if func:
             return instance(func)
@@ -154,62 +105,16 @@ class Auth:
             return wrapper
 
 
-class MissingArgumentError(HTTPError):
-    """Missing Argument Error."""
-
-    def __init__(self, arg_name):
-        super(MissingArgumentError, self).__init__(
-            400, f'Missing argument "{arg_name}"')
-        self.arg_name = arg_name
-
-
-class TokenExpiredError(HTTPError):
-    """Token Expired Error."""
-
-    def __init__(self):
-        super(TokenExpiredError, self).__init__(401, 'Token Expired')
-
-
-class ArgumentTypeError(HTTPError):
-    """Argument Type Error."""
-
-    def __init__(self, arg_name, type_name):
-        super(ArgumentTypeError, self).__init__(
-            400, f'Argument "{arg_name}" should be {type_name}')
-
-
-class InternalServerError(HTTPError):
-    """Task Error."""
-
-    def __init__(self, task_name, error_msg):
-        super(InternalServerError, self).__init__(
-            500, f'Error occured when excute task "{task_name}".\n{error_msg}')
-
-
-class AuthenticationError(HTTPError):
-    """Authentication Error."""
-
-    def __init__(self, msg):
-        super(AuthenticationError, self).__init__(401, msg)
-
-
-class AuthorizationError(HTTPError):
-    """Authorization Error."""
-
-    def __init__(self, arg_name):
-        super(AuthorizationError, self).__init__(
-            401, f'User\'s "{arg_name}" not satisfied.')
-
-
 class Mission:
 
-    def __init__(self, func):
+    def __init__(self, func, controller):
         if not callable(func):
             self.func = self.none_func
             self.func_name = 'none_func'
             raise TypeError(f'Need callable Object, not {type(func)}')
         self.func_name = func.__name__
         self.func = func
+        self.controller = controller
 
     @staticmethod
     def none_func(*args, **kwargs):
@@ -239,16 +144,22 @@ class Mission:
 
     def run(self, *args, **kwargs):
 
-        res = self.func(*args, **kwargs)
-        if isinstance(res, TaskError):
+        try:
+            res = self.func(*args, **kwargs)
+        except ServiceError as e:
+            self.controller.fail(e.code + 5000)
+        except TaskError as e:
             raise InternalServerError(self.func_name, res.get_json_object())
 
         return res
 
 
-class ServiceFactory(dict):
+class MissionFactory(dict):
 
-    def __init__(self, params=None):
+    controller = None
+
+    def __init__(self, params=None, controller=None):
+        self.controller = controller
         if isinstance(params, dict):
             super().__init__(params)
         elif not params:
@@ -258,14 +169,14 @@ class ServiceFactory(dict):
                 f"Arguments data should be a 'dict' not {type(params)}.")
 
     def __getattr__(self, name):
-        attr = self.get(name)
-        if isinstance(attr, dict):
-            return self.__class__(attr)
+        if name in self:
+            attr = self.get(name)
+            if isinstance(attr, dict):
+                return self.__class__(attr, self.controller)
+            else:
+                return Mission(attr, self.controller)
         else:
-            return Mission(attr)
-
-    def __setattr__(self, name, value):
-        raise PermissionError('Can not set attribute to <class Arguments>.')
+            return self.__getattribute__(name)
 
 
 class BaseController(RequestHandler):
@@ -276,7 +187,7 @@ class BaseController(RequestHandler):
         self.params = Arguments()
         self.token_args = Arguments()
         self.mg = MongoFactory()
-        self.s = ServiceFactory(SERVICES)
+        self.miss = MissionFactory(SERVICES, self)
 
     def _request_summary(self):
         s = ' '
@@ -337,6 +248,47 @@ class BaseController(RequestHandler):
             O_O.server.token_secret)
         self.set_header(O_O.server.token_header or 'Thor-Token', token)
 
+    def _check_params(self, args, checker):
+        print(args, checker)
+        for param_type in checker:
+            # 设置默认值
+            key = param_type.name
+            if args.get(key) is None:
+                if param_type.optional:
+                    args[key] = param_type.default
+                else:
+                    raise MissingArgumentError(param_type.name)
+
+            if param_type.type in (int, float, str, bool):
+                if args[key] is None:
+                    continue
+                elif not isinstance(args[key], param_type.type):
+                    try:
+                        args[key] = param_type.type(args[key])
+                    except:
+                        raise ArgumentTypeError(key, param_type.type)
+            elif param_type.type == list:
+                if not isinstance(args[key], list):
+                    raise ArgumentTypeError(key, list)
+                for obj in args[key]:
+                    self._check_params(obj, param_type.subparam)
+            elif param_type.type == set:
+                if not isinstance(args[key], dict):
+                    raise ArgumentTypeError(key, dict)
+                self._check_params(args[key], param_type.subparam)
+            else:
+                raise TypeError(f'Unkown type {type(checker[key])}')
+
+    def check_params(self, checker=None):
+        if self.request.method in ('GET', 'DELETE', 'HEAD'):
+            args = self.parse_form_arguments(checker)
+        else:
+            args = self.parse_json_arguments(checker)
+
+        self._check_params(args, checker)
+
+        return args
+
     def parse_form_arguments(self, checker=None):
         """Parse FORM argument like `get_argument`."""
         if O_O.debug:
@@ -347,10 +299,7 @@ class BaseController(RequestHandler):
             k: v[0].decode() for k, v in self.request.arguments.items() if v[0]
         }
 
-        if checker:
-            args = checker(**args)
-
-        return Arguments(args)
+        return args
 
     def parse_json_arguments(self, checker=None):
         """Parse JSON argument like `get_argument`."""
@@ -368,10 +317,7 @@ class BaseController(RequestHandler):
             dump_error(self.request.body.decode())
             raise ParseJSONError('Request body should be a dictonary.')
 
-        if checker:
-            args = checker(**args)
-
-        return Arguments(args)
+        return args
 
     def finish_with_json(self, data):
         """Turn data to JSON format before finish."""

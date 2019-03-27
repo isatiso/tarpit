@@ -4,8 +4,7 @@ import inspect
 import time
 
 from tarpit.config import CONFIG as O_O
-from tarpit.web import BaseController, route, check_params, Auth, AuthorizationError
-from tarpit.task import SERVICES
+from tarpit.toolkit import P, route, BaseController
 
 
 @route(r'/')
@@ -14,8 +13,13 @@ class Index(BaseController):
 
     async def get(self, *_args, **_kwargs):
         """Get method of IndexHandler."""
-        self.mg.image.insert_image()
-        self.finish(b'<h1>Dejavu!</h1>')
+
+        args = self.check_params({
+            P('a') >> str,
+            P('b') >> int,
+        })
+
+        self.finish(f'<h1>Dejavu! {args.a} {args.b}</h1>'.encode())
 
 
 @route(r'*.php')

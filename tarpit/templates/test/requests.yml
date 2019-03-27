@@ -1,0 +1,23 @@
+- name: 'lkj'
+  request:
+    url: /user/signout
+    method: POST
+    query:
+
+    headers:
+      Bf-Token: { token }
+      Content-Type: "application/json"
+  response:
+    http_status: "$in:(202, 304)"
+    headers:
+      Bf-Token: "$ne:null"
+    body:
+      status: $eq:0
+      msg: $ne:null
+      data:
+        user_id: $ne:null
+  command:
+    - 'print'
+  set_env:
+    token: response.headers.Bf-token
+    user_id: response.body.data.user_id

@@ -14,14 +14,15 @@ from kombu.serialization import register
 from sqlalchemy import exc as sqlexc
 import pymysql
 
-from tarpit.config import CONFIG as O_O, _ENV as env
-from tarpit.dao import transaction
-from tarpit.utils import json_encoder, dump_in, dump_out, dump_error
+from .err import ServiceError
+from .config import CONFIG as O_O, _ENV as env
+from .dao import transaction
+from .utils import json_encoder, dump_in, dump_out, dump_error, tarpit_dumps, tarpit_loads
 
 register(
     'tarpit_json',
-    json_encoder.thor_dumps,
-    json_encoder.thor_loads,
+    tarpit_dumps,
+    tarpit_loads,
     content_type='application/json',
     content_encoding='utf-8')
 
@@ -133,8 +134,10 @@ def catch_error(function):
         """Function that wrapped."""
         try:
             return function(*args, **kwargs)
+        except ServiceError as e:
+            raise e
         except Exception as e:
-            return TaskError(e)
+            raise TaskError(e)
 
     return wrapper
 
@@ -157,7 +160,6 @@ class Service:
     def __call__(self, func):
 
         func = transaction(func, self.mappers)
-
         func = catch_error(func)
 
         cc = CeleryConfig()
