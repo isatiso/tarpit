@@ -27,21 +27,17 @@ class MongoBase():
         pass
 
 
-class MongoFactory():
-    """Mongo Client Set."""
+class MongoCollection():
 
-    _collection_dict = None
+    _instance = None
 
-    def __init__(self, sync=False):
-        if self._collection_dict is None:
-            self._mongo_init()
-            print('collection_init')
-        if sync:
-            self._client = self._mongo_client
-        else:
-            self._client = self._motor_client
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(MongoCollection, cls).__new__(cls)
+            cls._instance.init()
+        return cls._instance
 
-    def _mongo_init(self):
+    def init(self):
         T_T = O_O.database.mongo
         self._mongo_client = MongoClient(T_T.client).__getattr__(T_T.db)
         self._motor_client = motor.MotorClient(T_T.client).__getattr__(T_T.db)
@@ -52,8 +48,26 @@ class MongoFactory():
             for scls in MongoBase.__subclasses__():
                 scls.__collection_init__(self._mongo_client)
 
+
+class MongoFactory():
+    """Mongo Client Set."""
+
+    def __init__(self, sync=False):
+        mongo_collection = MongoCollection()
+        self._collection_dict = mongo_collection._collection_dict
+        self._mongo_client = mongo_collection._mongo_client
+        self._motor_client = mongo_collection._motor_client
+
+        if sync:
+            self._client = self._mongo_client
+        else:
+            self._client = self._motor_client
+
     def __getattr__(self, name):
-        return self.collection_dict[name](self._client)
+        if name in self._collection_dict:
+            return self._collection_dict[name](self._client)
+        else:
+            return self.__getattribute__(name)
 
 
 class SessionMaker:

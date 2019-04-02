@@ -61,7 +61,7 @@ class ErrorCode():
     _code = {}
 
     def __init__(self, filepath='settings/status.yml'):
-        STATUS_PATH = os.path.join(sys.path[0], filepath)
+        STATUS_PATH = os.path.join(os.getcwd(), filepath)
         code_list = []
         try:
             with open(STATUS_PATH, 'r', encoding='utf-8') as config:

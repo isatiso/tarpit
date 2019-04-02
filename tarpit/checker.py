@@ -19,7 +19,6 @@ class RequestParameter:
         if isinstance(attr_type, type):
             self.__param_type__ = attr_type
         elif isinstance(attr_type, (list, set)):
-            print(attr_type)
             self.__param_type__ = type(attr_type)
             self.__param_subparam__ = attr_type
             self.__param_default__ = type(attr_type)()
