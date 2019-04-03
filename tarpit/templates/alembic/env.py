@@ -5,6 +5,8 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 
+from tarpit.config import CONFIG as O_O
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -38,7 +40,8 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # url = config.get_main_option("sqlalchemy.url")
+    url = O_O.database.mysql
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True)
 
@@ -53,8 +56,11 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+    section = config.get_section(config.config_ini_section)
+    section['sqlalchemy.url'] = O_O.database.mysql
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        section,
         prefix='sqlalchemy.',
         poolclass=pool.NullPool)
 
