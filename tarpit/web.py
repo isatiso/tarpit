@@ -149,7 +149,7 @@ class Mission:
         except ServiceError as e:
             self.controller.fail(e.code + 5000)
         except TaskError as e:
-            raise InternalServerError(self.func_name, res.get_json_object())
+            raise InternalServerError(self.func_name, e.get_json_object())
 
         return res
 
@@ -228,13 +228,15 @@ class BaseController(RequestHandler):
         self.params = Arguments(params)
 
     def set_default_headers(self):
-        self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE')
-        self.set_header('Access-Control-Allow-Headers',
-                        'Authorization,Content-Type,Thor-Token')
+        origin = O_O.server.access_control_allow_origin or '*'
+        methods = O_O.server.access_control_allow_methods or 'GET,POST,PUT,DELETE'
+        headers = O_O.server.access_control_allow_headers or 'Authorization,Content-Type,Token'
+        self.set_header('Access-Control-Allow-Origin', origin)
+        self.set_header('Access-Control-Allow-Methods', methods)
+        self.set_header('Access-Control-Allow-Headers', headers)
 
     def get_token(self):
-        header_name = O_O.server.token_header or 'Thor-Token'
+        header_name = O_O.server.token_header or 'Token'
         token = self.request.headers.get(header_name)
         try:
             return jwt.decode(token, O_O.server.token_secret)
@@ -242,14 +244,17 @@ class BaseController(RequestHandler):
             return None
 
     def set_token(self, token_params: dict = None, expired: int = 3600):
-        token_params = token_params or dict()
+        if not token_params:
+            token_params = dict()
+            expired = 0
         token = jwt.encode(
             dict(token_params, timestamp=int(time.time()) + expired),
             O_O.server.token_secret)
-        self.set_header(O_O.server.token_header or 'Thor-Token', token)
+        token_name = O_O.server.token_header or 'Token'
+        self.set_header('Access-Control-Expose-Headers', token_name)
+        self.set_header(token_name, token)
 
     def _check_params(self, args, checker):
-        print(args, checker)
         for param_type in checker:
             # 设置默认值
             key = param_type.name
@@ -287,7 +292,7 @@ class BaseController(RequestHandler):
 
         self._check_params(args, checker)
 
-        return args
+        return Arguments(args)
 
     def parse_form_arguments(self, checker=None):
         """Parse FORM argument like `get_argument`."""

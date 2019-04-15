@@ -11,10 +11,10 @@ from sqlalchemy.dialects.mysql import MEDIUMTEXT, INTEGER, DECIMAL
 from sqlalchemy import PrimaryKeyConstraint, Sequence, UniqueConstraint, Index
 from sqlalchemy import text
 
-from .sqlalchemy_base import Base, CreatedAt, UpdatedAt, Remark, Deleted
+from .sqlalchemy_base import Base
 
 
-class User(Base, CreatedAt, UpdatedAt, Remark, Deleted):
+class User(Base):
     """用户"""
     __tablename__ = 'user'
 
@@ -23,6 +23,13 @@ class User(Base, CreatedAt, UpdatedAt, Remark, Deleted):
     phone = Column(String(100))
     password = Column(String(36))
     avatar = Column(String(255))
+    remark = Column(Text)
+    deleted = Column(SmallInteger, server_default=text('0'))
+
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(
+        TIMESTAMP,
+        server_default=text('CURRENT_TIMESTAMP  ON UPDATE CURRENT_TIMESTAMP'))
 
     __table_args__ = (
         PrimaryKeyConstraint('user_id'),

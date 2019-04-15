@@ -16,7 +16,7 @@ def recursive_import(submodule_location, submodule_name=''):
     module_dict = dict()
     for m in pkgutil.iter_modules(submodule_location):
         if m.ispkg:
-            location = f'{submodule_location[0]}/{m.name}'
+            location = f'{submodule_location[0]}{os.sep}{m.name}'
             recursive_import([location], submodule_name=f'{dirname}{m.name}')
         else:
             module_dict[m.name] = importlib.import_module(f'{dirname}{m.name}')

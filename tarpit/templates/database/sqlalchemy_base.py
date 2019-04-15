@@ -11,21 +11,3 @@ from sqlalchemy import PrimaryKeyConstraint, Sequence, UniqueConstraint
 from sqlalchemy import func, text
 
 Base = declarative_base()
-
-
-class CreatedAt:
-    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-
-
-class UpdatedAt:
-    updated_at = Column(
-        TIMESTAMP,
-        server_default=text('CURRENT_TIMESTAMP  ON UPDATE CURRENT_TIMESTAMP'))
-
-
-class Remark:
-    remark = Column(Text)
-
-
-class Deleted:
-    deleted = Column(SmallInteger, server_default=text('0'))
