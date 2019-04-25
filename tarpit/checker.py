@@ -25,7 +25,7 @@ class RequestParameter:
         elif isinstance(attr_type, list):
             if len(attr_type) == 1 and isinstance(attr_type[0], type):
                 self.__param_type__ = type(attr_type)
-                self.__param_subparam__ = attr_type
+                self.__param_subparam__ = attr_type[0]
             else:
                 self.__param_type__ = type(attr_type)
                 self.__param_subparam__ = attr_type
