@@ -18,10 +18,18 @@ class RequestParameter:
             )
         if isinstance(attr_type, type):
             self.__param_type__ = attr_type
-        elif isinstance(attr_type, (list, set)):
+        elif isinstance(attr_type, set):
             self.__param_type__ = type(attr_type)
             self.__param_subparam__ = attr_type
             self.__param_default__ = type(attr_type)()
+        elif isinstance(attr_type, list):
+            if len(attr_type) == 1 and isinstance(attr_type[0], type):
+                self.__param_type__ = type(attr_type)
+                self.__param_subparam__ = attr_type
+            else:
+                self.__param_type__ = type(attr_type)
+                self.__param_subparam__ = attr_type
+                self.__param_default__ = type(attr_type)()
 
         return self
 
@@ -47,6 +55,7 @@ class RequestParameter:
 
 
 class P(RequestParameter):
+    """optional parameter builder."""
     __param_optional__ = True
 
     def __ge__(self, value):
@@ -55,7 +64,9 @@ class P(RequestParameter):
 
 
 class M(RequestParameter):
+    """required parameter builder."""
     __param_optional__ = False
 
     def __ge__(self, value):
-        raise ValueError('Only optional parameter can set default value.')
+        raise ValueError(
+            'Only optional parameter <class "P"> can set default value.')

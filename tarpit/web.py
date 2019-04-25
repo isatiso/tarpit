@@ -21,6 +21,7 @@ from tornado.log import app_log, gen_log
 from .err import *
 from .config import CONFIG as O_O, get_status_message
 from .utils import Arguments, dump_in, dump_out, dump_error, json_encoder
+from .checker import M
 from .task import TaskError, SERVICES
 from .dao import MongoFactory
 
@@ -210,21 +211,19 @@ class BaseController(RequestHandler):
                 #          self._request_summary()] + list(value.args))
                 gen_log.warning('\033[0;31m' + value.log_message + '\033[0m')
         else:
-            app_log.error(
-                "Uncaught exception %s\n%r",
-                self._request_summary(),
-                self.request,
-                exc_info=(typ, value, tb))
+            app_log.error("Uncaught exception %s\n%r",
+                          self._request_summary(),
+                          self.request,
+                          exc_info=(typ, value, tb))
 
     async def options(self, *_args, **_kwargs):
         self.success()
 
     def prepare(self):
-        params = dict(
-            device=self.get_argument('device', 'web'),
-            lang=self.get_argument('lang', 'cn').lower(),
-            remote_ip=self.request.remote_ip,
-            request_time=time.time())
+        params = dict(device=self.get_argument('device', 'web'),
+                      lang=self.get_argument('lang', 'cn').lower(),
+                      remote_ip=self.request.remote_ip,
+                      request_time=time.time())
         self.params = Arguments(params)
 
     def set_default_headers(self):
@@ -275,8 +274,16 @@ class BaseController(RequestHandler):
             elif param_type.type == list:
                 if not isinstance(args[key], list):
                     raise ArgumentTypeError(key, list)
-                for obj in args[key]:
-                    self._check_params(obj, param_type.subparam)
+                if isinstance(param_type.subparam, type):
+                    for i, obj in enumerate(args[key]):
+                        if not isinstance(obj, param_type.subparam):
+                            try:
+                                args[key][i] = param_type.subparam(obj)
+                            except:
+                                raise ArgumentTypeError(f'{key}.{i}', param_type.subparam)
+                else:
+                    for obj in args[key]:
+                        self._check_params(obj, param_type.subparam)
             elif param_type.type == set:
                 if not isinstance(args[key], dict):
                     raise ArgumentTypeError(key, dict)
@@ -354,8 +361,8 @@ class BaseController(RequestHandler):
     def fail(self, status, data=None, polyfill=None, **_kwargs):
         """assemble and return error data."""
         msg = get_status_message(status)
-        self.finish_with_json(
-            dict(status=status, msg=msg, data=data, **_kwargs))
+        self.finish_with_json(dict(status=status, msg=msg, data=data,
+                                   **_kwargs))
 
     def success(self, data=None, msg='Successfully.', **_kwargs):
         """assemble and return error data."""
