@@ -211,19 +211,21 @@ class BaseController(RequestHandler):
                 #          self._request_summary()] + list(value.args))
                 gen_log.warning('\033[0;31m' + value.log_message + '\033[0m')
         else:
-            app_log.error("Uncaught exception %s\n%r",
-                          self._request_summary(),
-                          self.request,
-                          exc_info=(typ, value, tb))
+            app_log.error(
+                "Uncaught exception %s\n%r",
+                self._request_summary(),
+                self.request,
+                exc_info=(typ, value, tb))
 
     async def options(self, *_args, **_kwargs):
         self.success()
 
     def prepare(self):
-        params = dict(device=self.get_argument('device', 'web'),
-                      lang=self.get_argument('lang', 'cn').lower(),
-                      remote_ip=self.request.remote_ip,
-                      request_time=time.time())
+        params = dict(
+            device=self.get_argument('device', 'web'),
+            lang=self.get_argument('lang', 'cn').lower(),
+            remote_ip=self.request.remote_ip,
+            request_time=time.time())
         self.params = Arguments(params)
 
     def set_default_headers(self):
@@ -280,7 +282,8 @@ class BaseController(RequestHandler):
                             try:
                                 args[key][i] = param_type.subparam(obj)
                             except:
-                                raise ArgumentTypeError(f'{key}.{i}', param_type.subparam)
+                                raise ArgumentTypeError(f'{key}.{i}',
+                                                        param_type.subparam)
                 else:
                     for obj in args[key]:
                         self._check_params(obj, param_type.subparam)
@@ -307,9 +310,18 @@ class BaseController(RequestHandler):
             dump_in(f'Input: {self.request.method} {self.request.path}',
                     self.request.body.decode()[:500])
 
-        args = {
-            k: v[0].decode() for k, v in self.request.arguments.items() if v[0]
-        }
+        args = dict()
+
+        for k, v in self.request.arguments.items():
+            length = len(v)
+            if length <= 0:
+                continue
+            elif length == 1:
+                if not v[0]:
+                    continue
+                args[k] = v[0].decode()
+            else:
+                args[k] = [x.decode() for x in v if x]
 
         return args
 
@@ -361,8 +373,8 @@ class BaseController(RequestHandler):
     def fail(self, status, data=None, polyfill=None, **_kwargs):
         """assemble and return error data."""
         msg = get_status_message(status)
-        self.finish_with_json(dict(status=status, msg=msg, data=data,
-                                   **_kwargs))
+        self.finish_with_json(
+            dict(status=status, msg=msg, data=data, **_kwargs))
 
     def success(self, data=None, msg='Successfully.', **_kwargs):
         """assemble and return error data."""
