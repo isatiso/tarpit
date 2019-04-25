@@ -21,6 +21,7 @@ from tornado.log import app_log, gen_log
 from .err import *
 from .config import CONFIG as O_O, get_status_message
 from .utils import Arguments, dump_in, dump_out, dump_error, json_encoder
+from .checker import M
 from .task import TaskError, SERVICES
 from .dao import MongoFactory
 
@@ -275,8 +276,17 @@ class BaseController(RequestHandler):
             elif param_type.type == list:
                 if not isinstance(args[key], list):
                     raise ArgumentTypeError(key, list)
-                for obj in args[key]:
-                    self._check_params(obj, param_type.subparam)
+                if isinstance(param_type.subparam, type):
+                    for i, obj in enumerate(args[key]):
+                        if not isinstance(obj, param_type.subparam):
+                            try:
+                                args[key][i] = param_type.subparam(obj)
+                            except:
+                                raise ArgumentTypeError(f'{key}.{i}',
+                                                        param_type.subparam)
+                else:
+                    for obj in args[key]:
+                        self._check_params(obj, param_type.subparam)
             elif param_type.type == set:
                 if not isinstance(args[key], dict):
                     raise ArgumentTypeError(key, dict)
@@ -300,9 +310,18 @@ class BaseController(RequestHandler):
             dump_in(f'Input: {self.request.method} {self.request.path}',
                     self.request.body.decode()[:500])
 
-        args = {
-            k: v[0].decode() for k, v in self.request.arguments.items() if v[0]
-        }
+        args = dict()
+
+        for k, v in self.request.arguments.items():
+            length = len(v)
+            if length <= 0:
+                continue
+            elif length == 1:
+                if not v[0]:
+                    continue
+                args[k] = v[0].decode()
+            else:
+                args[k] = [x.decode() for x in v if x]
 
         return args
 
