@@ -275,7 +275,8 @@ class BaseController(RequestHandler):
                         raise ArgumentTypeError(key, param_type.type)
             elif param_type.type == list:
                 if not isinstance(args[key], list):
-                    raise ArgumentTypeError(key, list)
+                    # raise ArgumentTypeError(key, list)
+                    args[key] = [args[key]]
                 if isinstance(param_type.subparam, type):
                     for i, obj in enumerate(args[key]):
                         if not isinstance(obj, param_type.subparam):
