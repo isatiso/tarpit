@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='tarpit',
-    version='0.0.19',
+    version='0.0.20',
     author='plank',
     author_email='sieglive@gmail.com',
     url='https://lazor.cn',

@@ -96,7 +96,8 @@ class AccountAddress(BaseController):
             user_id=self.token_args.user_id,
             recipient=args.recipient,
             phone=args.phone,
-            address=args.address)
+            address=args.address,
+        )
 
         self.success()
 
@@ -114,7 +115,8 @@ class AccountAddress(BaseController):
             address_id=args.address_id,
             recipient=args.recipient,
             phone=args.phone,
-            address=args.address)
+            address=args.address,
+        )
 
         self.success()
 
@@ -155,7 +157,9 @@ class SignIn(BaseController):
         })
 
         user_info = await self.miss.user.check_password(
-            username=args.username, password=args.password)
+            username=args.username,
+            password=args.password,
+        )
 
         if not user_info:
             self.fail(404)

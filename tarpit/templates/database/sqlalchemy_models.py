@@ -3,7 +3,6 @@
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy import (CHAR, BigInteger, Column, Enum, Integer, SmallInteger,
                         Text, String, Numeric, Float, TIMESTAMP)
@@ -11,7 +10,7 @@ from sqlalchemy.dialects.mysql import MEDIUMTEXT, INTEGER, DECIMAL
 from sqlalchemy import PrimaryKeyConstraint, Sequence, UniqueConstraint, Index
 from sqlalchemy import text
 
-from .sqlalchemy_base import Base
+from tarpit.sa import Base
 
 
 class User(Base):

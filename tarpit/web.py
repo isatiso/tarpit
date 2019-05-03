@@ -215,7 +215,8 @@ class BaseController(RequestHandler):
                 "Uncaught exception %s\n%r",
                 self._request_summary(),
                 self.request,
-                exc_info=(typ, value, tb))
+                exc_info=(typ, value, tb),
+            )
 
     async def options(self, *_args, **_kwargs):
         self.success()
@@ -225,7 +226,8 @@ class BaseController(RequestHandler):
             device=self.get_argument('device', 'web'),
             lang=self.get_argument('lang', 'cn').lower(),
             remote_ip=self.request.remote_ip,
-            request_time=time.time())
+            request_time=time.time(),
+        )
         self.params = Arguments(params)
 
     def set_default_headers(self):
@@ -374,8 +376,8 @@ class BaseController(RequestHandler):
     def fail(self, status, data=None, polyfill=None, **_kwargs):
         """assemble and return error data."""
         msg = get_status_message(status)
-        self.finish_with_json(
-            dict(status=status, msg=msg, data=data, **_kwargs))
+        res = dict(status=status, msg=msg, data=data, **_kwargs)
+        self.finish_with_json(res)
 
     def success(self, data=None, msg='Successfully.', **_kwargs):
         """assemble and return error data."""

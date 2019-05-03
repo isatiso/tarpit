@@ -12,7 +12,12 @@ class UserMapper(BaseMapper):
 
     def insert_user(self, name, phone, password, role, avatar, **kwargs):
         user = User(
-            name=name, phone=phone, password=password, role=role, avatar=None)
+            name=name,
+            phone=phone,
+            password=password,
+            role=role,
+            avatar=None,
+        )
         self.session.add(user)
         return user
 

@@ -3,7 +3,7 @@ from functools import wraps
 import traceback
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, Query, Session
 from motor import MotorGridFSBucket, motor_tornado as motor
 from pymongo import MongoClient
@@ -12,7 +12,7 @@ from .utils.logger import dump_in, dump_out, dump_error
 from .config import CONFIG as O_O
 
 
-class MongoBase():
+class MongoBase:
     """Mongo Client Set."""
 
     __collection_name__ = None
@@ -27,7 +27,7 @@ class MongoBase():
         pass
 
 
-class MongoCollection():
+class MongoCollection:
 
     _instance = None
 
@@ -49,7 +49,7 @@ class MongoCollection():
                 scls.__collection_init__(self._mongo_client)
 
 
-class MongoFactory():
+class MongoFactory:
     """Mongo Client Set."""
 
     def __init__(self, sync=False):
@@ -85,7 +85,8 @@ class SessionMaker:
             echo=False,
             pool_recycle=1000,
             encoding='utf-8',
-            isolation_level='REPEATABLE_READ')
+            isolation_level='REPEATABLE_READ',
+        )
         self.session_maker = sessionmaker(bind=self.new_engine)
 
     def create(self):
@@ -125,21 +126,21 @@ class DaoContext:
         for key in options:
             alias[key] = None
 
-        for key in entity.__dict__:
+        for col in inspect(entity).mapper.column_attrs:
+            key = col.key
             if not alias or key in alias:
-                if not key.startswith('_'):
-                    if isinstance(alias.get(key), str):
-                        real_key = alias[key]
-                    else:
-                        real_key = key
-                    if isinstance(entity.__dict__[key], enum.Enum):
-                        res[real_key] = entity.__dict__[key].name
-                    elif isinstance(entity.__dict__[key], datetime):
-                        t = entity.__dict__[key]
-                        t = t.replace(tzinfo=timezone.utc)
-                        res[real_key] = int(t.timestamp())
-                    else:
-                        res[real_key] = entity.__dict__[key]
+                if isinstance(alias.get(key), str):
+                    real_key = alias[key]
+                else:
+                    real_key = key
+                if isinstance(getattr(entity, key), enum.Enum):
+                    res[real_key] = getattr(entity, key).name
+                elif isinstance(getattr(entity, key), datetime):
+                    t = getattr(entity, key)
+                    t = t.replace(tzinfo=timezone.utc)
+                    res[real_key] = int(t.timestamp())
+                else:
+                    res[real_key] = getattr(entity, key)
 
         return res
 
