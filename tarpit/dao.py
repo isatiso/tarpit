@@ -156,7 +156,7 @@ def transaction(function, mappers, rollback=True):
             mapper_dict = {(scls.__alias__ or scls.__name__): scls
                            for scls in BaseMapper.__subclasses__()}
             parents = tuple(mapper_dict[m] for m in mappers if m in mapper_dict)
-            mapper = type('Mapper', parents, {})
+            mapper = type("Mapper", parents, {})
         else:
             mapper = BaseMapper
 
