@@ -1,5 +1,5 @@
 alembic==1.0.7
-celery==4.2.1
+celery==5.2.2
 gevent==1.4.0
 motor==2.0.0
 PyJWT==1.7.1
